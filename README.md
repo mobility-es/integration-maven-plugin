@@ -1,7 +1,7 @@
 AIQ8 Integration Maven Plugin
 =============================
 
-The AIQ8 Integration Maven plugin is used to control  to facilitate the development of Integration Adapters to integrate with the 
+The AIQ8 Integration Maven plugin is used to facilitate the development of Integration Adapters to integrate with the 
 AIQ8 Platform.
 
 Version
