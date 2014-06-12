@@ -16,9 +16,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Properties;
 
-@Mojo(name = "platform.clean")
+@Mojo(name = "server.clean")
 @Execute(phase = LifecyclePhase.INITIALIZE)
-public class CleanPlatformMojo extends AbstractAIQMojo {
+public class CleanServerMojo extends AbstractAIQMojo {
 
     @Parameter(property = "url")
     private URL url;
@@ -38,14 +38,14 @@ public class CleanPlatformMojo extends AbstractAIQMojo {
         final String org = properties.getProperty("aiq.orgname");
         final String username = properties.getProperty("aiq.username");
         final String password = properties.getProperty("aiq.password");
-        final String platformUrl = properties.getProperty("aiq.url");
+        final String aiqUrl = properties.getProperty("aiq.url");
 
         getLog().info("Cleaning data for org [" + org + "]");
 
         final HttpClient client = new DefaultHttpClient();
-        final HttpPost post = new HttpPost(buildIntegrationURI(url, org, "platform.clean"));
+        final HttpPost post = new HttpPost(buildIntegrationURI(url, org, "server.clean"));
 
-        addAuthenticationHeader(post, platformUrl, username, password, org);
+        addAuthenticationHeader(post, aiqUrl, username, password, org);
 
         try {
             final HttpResponse response = client.execute(post);

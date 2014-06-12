@@ -43,13 +43,13 @@ public class DeployMojo extends AbstractAIQMojo {
         final String org = properties.getProperty("aiq.orgname");
         final String username = properties.getProperty("aiq.username");
         final String password = properties.getProperty("aiq.password");
-        final String platformUrl = properties.getProperty("aiq.url");
+        final String aiqUrl = properties.getProperty("aiq.url");
 
         getLog().info("Deploy integration adapter [" + file + "] for org [" + org + "]");
         HttpClient client = new DefaultHttpClient();
         HttpPost post = new HttpPost(buildIntegrationURI(url, org, "ia.deploy"));
 
-        addAuthenticationHeader(post, platformUrl, username, password, org);
+        addAuthenticationHeader(post, aiqUrl, username, password, org);
 
         MultipartEntity entity = new MultipartEntity();
         entity.addPart("file", new FileBody(file));

@@ -63,7 +63,7 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
     /**
      * Builds an URI to the integration supervisor for the given organization and action name.
      *
-     * @param baseURL URL to the mobility platform supervisor, must not be null.
+     * @param baseURL URL to the server supervisor, must not be null.
      * @param orgName The name of the organization to which to build the URI, must not be null.
      * @param action The name of the action to be executed by the integration supervisor, must not be null.
      * @param params List of pairs to be added to the URI as query parameters, may be null.
@@ -101,10 +101,10 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
     }
 
     /**
-     * Authenticates and authorizes given user within the platform and adds authentication header to the given request.
+     * Authenticates and authorizes given user within the server and adds authentication header to the given request.
      *
      * @param request The request to which to add the authentication header, must not be null.
-     * @param baseUrl URL of the mobility platform with which to authenticate, must not be null.
+     * @param baseUrl URL of the server with which to authenticate, must not be null.
      * @param username The name of the user which to authenticate, must not be null.
      * @param password The password of the user to authenticate, must not be null.
      * @param orgName The name of the organization to which the given user belogs, must not be null.
@@ -123,13 +123,13 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
     }
 
     /**
-     * Authenticates and authorizes given user within the platform and returns the access token associated with the
+     * Authenticates and authorizes given user within the server and returns the access token associated with the
      * user session.
      *
-     * @param baseUrl URL of the mobility platform with which to authenticate, must not be null.
+     * @param baseUrl URL of the server with which to authenticate, must not be null.
      * @param username The name of the user which to authenticate, must not be null.
      * @param password The password of the user to authenticate, must not be null.
-     * @param orgName The name of the organization to which the given user belogs, must not be null.
+     * @param orgName The name of the organization to which the given user belongs, must not be null.
      * @return access token string for given user, will not be null.
      * @throws MojoExecutionException in case when provided data is invalid.
      * @throws MojoFailureException in case when authentication fails.

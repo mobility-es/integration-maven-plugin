@@ -6,12 +6,12 @@ import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 
-@Mojo(name = "platform.logs.tail")
+@Mojo(name = "server.logs")
 @Execute(phase = LifecyclePhase.INITIALIZE)
-public class ReadPlatformLogsMojo extends AbstractReadLogsMojo {
+public class FetchServerLogsMojo extends AbstractFetchLogsMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        execute("platform.logs.tail");
+        execute("server.logs");
     }
 }

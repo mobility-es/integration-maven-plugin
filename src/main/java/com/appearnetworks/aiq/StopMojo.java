@@ -37,14 +37,14 @@ public class StopMojo extends AbstractAIQMojo {
         final String org = properties.getProperty("aiq.orgname");
         final String username = properties.getProperty("aiq.username");
         final String password = properties.getProperty("aiq.password");
-        final String platformUrl = properties.getProperty("aiq.url");
+        final String aiqUrl = properties.getProperty("aiq.url");
 
         getLog().info("Stop integration adapter for org [" + org + "]");
 
         HttpClient client = new DefaultHttpClient();
         HttpPost post = new HttpPost(buildIntegrationURI(url, org, "ia.stop"));
 
-        addAuthenticationHeader(post, platformUrl, username, password, org);
+        addAuthenticationHeader(post, aiqUrl, username, password, org);
 
         try {
             HttpResponse response = client.execute(post);
