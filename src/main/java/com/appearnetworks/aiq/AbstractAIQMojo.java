@@ -1,12 +1,10 @@
 package com.appearnetworks.aiq;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -49,6 +47,8 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
      * The name of the response document field that stores the access token of an authenticated user.
      */
     private static final String ACCESS_TOKEN_FIELD = "access_token";
+
+    private static final String LINKS_FIELD = "links";
 
     /**
      * Prefix used in requests to the integration supervisor.
@@ -101,43 +101,22 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
     }
 
     /**
-     * Authenticates and authorizes given user within the server and adds authentication header to the given request.
-     *
-     * @param request The request to which to add the authentication header, must not be null.
-     * @param baseUrl URL of the server with which to authenticate, must not be null.
-     * @param username The name of the user which to authenticate, must not be null.
-     * @param password The password of the user to authenticate, must not be null.
-     * @param orgName The name of the organization to which the given user belogs, must not be null.
-     * @throws MojoExecutionException in case when provided data is invalid.
-     * @throws MojoFailureException in case when authentication fails.
-     */
-    protected void addAuthenticationHeader(final HttpRequest request,
-                                           final String baseUrl,
-                                           final String username,
-                                           final String password,
-                                           final String orgName)
-            throws MojoExecutionException, MojoFailureException {
-        request.setHeader(
-                HttpHeaders.AUTHORIZATION,
-                "BEARER " + fetchAccessToken(baseUrl, username, password, orgName));
-    }
-
-    /**
-     * Authenticates and authorizes given user within the server and returns the access token associated with the
-     * user session.
+     * Authenticates and authorizes given user within the server.
      *
      * @param baseUrl URL of the server with which to authenticate, must not be null.
      * @param username The name of the user which to authenticate, must not be null.
      * @param password The password of the user to authenticate, must not be null.
      * @param orgName The name of the organization to which the given user belongs, must not be null.
+     * @param solutionId The id of the solution, must not be null.
      * @return access token string for given user, will not be null.
      * @throws MojoExecutionException in case when provided data is invalid.
      * @throws MojoFailureException in case when authentication fails.
      */
-    protected String fetchAccessToken(final String baseUrl,
-                                      final String username,
-                                      final String password,
-                                      final String orgName)
+    protected JsonNode authenticate(final String baseUrl,
+                                    final String username,
+                                    final String password,
+                                    final String orgName,
+                                    final String solutionId)
             throws MojoExecutionException, MojoFailureException {
         validate("URL", baseUrl);
         validate("username", username);
@@ -164,11 +143,19 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
         }
 
         request.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
-        ((HttpPost)request).setEntity(buildBody(username, password));
+        ((HttpPost)request).setEntity(buildBody(username, password, solutionId));
 
-        getLog().debug("Authenticating user [" + username + "] in org [" + orgName + "]");
+        getLog().debug("Authenticating user [" + username + "] in org [" + orgName + "] and solution [" + solutionId + "]");
 
-        return requestAndGetValue(factory, request, ACCESS_TOKEN_FIELD);
+        return makeHttpRequestForJson(factory, request);
+    }
+
+    protected String extractAccessToken(JsonNode authenticationResponse) throws MojoExecutionException {
+        return extractValue(authenticationResponse, ACCESS_TOKEN_FIELD);
+    }
+
+    protected String extractLink(JsonNode authenticationResponse, String target) throws MojoExecutionException {
+        return extractValue(authenticationResponse, LINKS_FIELD, target);
     }
 
     /**
@@ -202,16 +189,18 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
      *
      * @param username username to use in the request, must not be null.
      * @param password password to use in the request, must not be null.
+     * @param solutionId solutionId to use in the request, must not be null.
      * @return body entity, will not be null.
      * @throws MojoExecutionException if given credentials could not be URL encoded
      */
-    private static HttpEntity buildBody(final String username, final String password) throws MojoExecutionException {
+    private static HttpEntity buildBody(final String username, final String password, final String solutionId) throws MojoExecutionException {
         try {
-            final List<NameValuePair> form = new ArrayList<>(4);
+            final List<NameValuePair> form = new ArrayList<>(5);
             form.add(new BasicNameValuePair("grant_type", "password"));
             form.add(new BasicNameValuePair("scope", "integration"));
             form.add(new BasicNameValuePair("username", username));
             form.add(new BasicNameValuePair("password", password));
+            form.add(new BasicNameValuePair("x-solutionId", solutionId));
 
             return new UrlEncodedFormEntity(form);
         } catch (UnsupportedEncodingException e) {
@@ -234,6 +223,12 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
                                              final HttpUriRequest request,
                                              final String... path)
         throws MojoExecutionException, MojoFailureException {
+        final JsonNode response = makeHttpRequestForJson(factory, request);
+
+        return extractValue(response, path);
+    }
+
+    private static JsonNode makeHttpRequestForJson(JsonFactory factory, HttpUriRequest request) throws MojoFailureException, MojoExecutionException {
         final HttpResponse response;
         try {
             final HttpClient client = new DefaultHttpClient();
@@ -246,7 +241,12 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
         if (statusCode != HttpStatus.SC_OK) {
             final String message;
             if (statusCode == HttpStatus.SC_BAD_REQUEST) {
-                message = getValue(response, factory, ERROR_DESCRIPTION_FIELD);
+                try {
+                    JsonNode json = factory.createParser(response.getEntity().getContent()).readValueAsTree();
+                    message = extractValue(json, ERROR_DESCRIPTION_FIELD);
+                } catch (IOException e) {
+                    throw new MojoFailureException("Unable to parse error response");
+                }
             } else {
                 message = response.getStatusLine().getReasonPhrase();
             }
@@ -257,38 +257,24 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
                     "] and error message is [" +
                     message + "]");
         }
-
-        return getValue(response, factory, path);
+        try {
+            return factory.createParser(response.getEntity().getContent()).readValueAsTree();
+        } catch (IOException e) {
+            throw new MojoFailureException("Failed to parse response");
+        }
     }
 
-    /**
-     * Returns value of a response field with given path.
-     *
-     * @param response response from which to read the field, must not be nil and must represent a valid JSON document.
-     * @param factory factory used to create a JSON parser, must not be null.
-     * @param path path the field for which to return the value, must not be null and must identify an existing field
-     *             within the response document.
-     * @return string value of the field, will not be null.
-     * @throws MojoExecutionException if the field could not be read from the response.
-     */
-    private static String getValue(final HttpResponse response, final JsonFactory factory, final String ... path)
+    protected static String extractValue(JsonNode json, final String... path)
             throws MojoExecutionException {
-        try {
-            final JsonParser parser = factory.createParser(response.getEntity().getContent());
-
-            JsonNode node = parser.readValueAsTree();
-            for (final String field : path) {
-                node = node.path(field);
-            }
-
-            if (node.isMissingNode()) {
-                throw new MojoExecutionException("Field not found in the response");
-            }
-
-            return node.textValue();
-        } catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage());
+        for (final String field : path) {
+            json = json.path(field);
         }
+
+        if (json.isMissingNode()) {
+            throw new MojoExecutionException("Field not found in the response");
+        }
+
+        return json.textValue();
     }
 
 }
