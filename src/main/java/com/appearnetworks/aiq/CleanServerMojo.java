@@ -1,9 +1,13 @@
 package com.appearnetworks.aiq;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -39,13 +43,17 @@ public class CleanServerMojo extends AbstractAIQMojo {
         final String username = properties.getProperty("aiq.username");
         final String password = properties.getProperty("aiq.password");
         final String aiqUrl = properties.getProperty("aiq.url");
+        final String solutionId = properties.getProperty("aiq.solutionid");
 
-        getLog().info("Cleaning data for org [" + org + "]");
+        getLog().info("Cleaning data for org [" + org + "] and solution [" + solutionId + "]");
+
+        final JsonNode authenticationResponse = authenticate(aiqUrl, username, password, org, solutionId);
 
         final HttpClient client = new DefaultHttpClient();
-        final HttpPost post = new HttpPost(buildIntegrationURI(url, org, "server.clean"));
+        final HttpPost post = new HttpPost(extractLink(authenticationResponse, "clearsolution"));
 
-        addAuthenticationHeader(post, aiqUrl, username, password, org);
+        post.setHeader(HttpHeaders.AUTHORIZATION, "BEARER " + extractAccessToken(authenticationResponse));
+        post.setEntity(new StringEntity("{}", ContentType.APPLICATION_JSON));
 
         try {
             final HttpResponse response = client.execute(post);
