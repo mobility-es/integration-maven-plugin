@@ -38,9 +38,7 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
      */
     public static final String UTF8_ENCODING = "UTF-8";
 
-    /**
-     * The name of the response document field that stores the cause of an authentication error.
-     */
+    private static final String ERROR_FIELD = "error";
     private static final String ERROR_DESCRIPTION_FIELD = "error_description";
 
     /**
@@ -242,8 +240,14 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
             final String message;
             if (statusCode == HttpStatus.SC_BAD_REQUEST) {
                 try {
-                    JsonNode json = factory.createParser(response.getEntity().getContent()).readValueAsTree();
-                    message = extractValue(json, ERROR_DESCRIPTION_FIELD);
+                    JsonNode jsonResponse = factory.createParser(response.getEntity().getContent()).readValueAsTree();
+                    JsonNode jsonNode = jsonResponse.path(ERROR_DESCRIPTION_FIELD);
+
+                    if (jsonNode.isMissingNode()) {
+                        jsonNode = jsonResponse.path(ERROR_FIELD);
+                    }
+
+                    message = jsonNode.textValue();
                 } catch (IOException e) {
                     throw new MojoFailureException("Unable to parse error response");
                 }
