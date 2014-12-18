@@ -44,14 +44,14 @@ public abstract class AbstractFetchLogsMojo extends AbstractAIQMojo {
         final String username = properties.getProperty("aiq.username");
         final String password = properties.getProperty("aiq.password");
         final String aiqUrl = properties.getProperty("aiq.url");
-        final String solutionId = properties.getProperty("aiq.solutionid");
+        final String solution = properties.getProperty("aiq.solution");
 
         getLog().info("Fetching logs from the org [" + org + "]");
 
         final HttpClient client = new DefaultHttpClient();
         final HttpGet get = new HttpGet(buildIntegrationURI(url, org, action));
 
-        final String accessToken = extractAccessToken(authenticate(aiqUrl, username, password, org, solutionId));
+        final String accessToken = extractAccessToken(authenticate(aiqUrl, username, password, org, solution));
         get.setHeader(HttpHeaders.AUTHORIZATION, "BEARER " + accessToken);
 
         try {

@@ -105,7 +105,7 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
      * @param username The name of the user which to authenticate, must not be null.
      * @param password The password of the user to authenticate, must not be null.
      * @param orgName The name of the organization to which the given user belongs, must not be null.
-     * @param solutionId The id of the solution, must not be null.
+     * @param solution The name of the solution, must not be null.
      * @return access token string for given user, will not be null.
      * @throws MojoExecutionException in case when provided data is invalid.
      * @throws MojoFailureException in case when authentication fails.
@@ -114,7 +114,7 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
                                     final String username,
                                     final String password,
                                     final String orgName,
-                                    final String solutionId)
+                                    final String solution)
             throws MojoExecutionException, MojoFailureException {
         validate("URL", baseUrl);
         validate("username", username);
@@ -141,9 +141,9 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
         }
 
         request.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
-        ((HttpPost)request).setEntity(buildBody(username, password, solutionId));
+        ((HttpPost)request).setEntity(buildBody(username, password, solution));
 
-        getLog().debug("Authenticating user [" + username + "] in org [" + orgName + "] and solution [" + solutionId + "]");
+        getLog().debug("Authenticating user [" + username + "] in org [" + orgName + "] and solution [" + solution + "]");
 
         return makeHttpRequestForJson(factory, request);
     }
@@ -187,18 +187,18 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
      *
      * @param username username to use in the request, must not be null.
      * @param password password to use in the request, must not be null.
-     * @param solutionId solutionId to use in the request, must not be null.
+     * @param solution solution to use in the request, must not be null.
      * @return body entity, will not be null.
      * @throws MojoExecutionException if given credentials could not be URL encoded
      */
-    private static HttpEntity buildBody(final String username, final String password, final String solutionId) throws MojoExecutionException {
+    private static HttpEntity buildBody(final String username, final String password, final String solution) throws MojoExecutionException {
         try {
             final List<NameValuePair> form = new ArrayList<>(5);
             form.add(new BasicNameValuePair("grant_type", "password"));
             form.add(new BasicNameValuePair("scope", "integration"));
             form.add(new BasicNameValuePair("username", username));
             form.add(new BasicNameValuePair("password", password));
-            form.add(new BasicNameValuePair("x-solutionId", solutionId));
+            form.add(new BasicNameValuePair("x-solution", solution));
 
             return new UrlEncodedFormEntity(form);
         } catch (UnsupportedEncodingException e) {

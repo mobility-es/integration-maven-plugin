@@ -43,11 +43,11 @@ public class CleanServerMojo extends AbstractAIQMojo {
         final String username = properties.getProperty("aiq.username");
         final String password = properties.getProperty("aiq.password");
         final String aiqUrl = properties.getProperty("aiq.url");
-        final String solutionId = properties.getProperty("aiq.solutionid");
+        final String solution = properties.getProperty("aiq.solution");
 
-        getLog().info("Cleaning data for org [" + org + "] and solution [" + solutionId + "]");
+        getLog().info("Cleaning data for org [" + org + "] and solution [" + solution + "]");
 
-        final JsonNode authenticationResponse = authenticate(aiqUrl, username, password, org, solutionId);
+        final JsonNode authenticationResponse = authenticate(aiqUrl, username, password, org, solution);
 
         final HttpClient client = new DefaultHttpClient();
         final HttpPost post = new HttpPost(extractLink(authenticationResponse, "clearsolution"));
