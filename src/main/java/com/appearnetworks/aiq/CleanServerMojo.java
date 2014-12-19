@@ -2,7 +2,6 @@ package com.appearnetworks.aiq;
 
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -56,7 +55,7 @@ public class CleanServerMojo extends AbstractAIQMojo {
 
         try {
             final HttpResponse response = client.execute(post);
-            if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+            if(response.getStatusLine().getStatusCode() % 100 == 2) {
                 getLog().info("Data cleaned successfully.");
             } else {
                 throw new MojoFailureException("Failed to clean data, the status code is [" +
