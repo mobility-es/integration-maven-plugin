@@ -55,7 +55,7 @@ public class CleanServerMojo extends AbstractAIQMojo {
 
         try {
             final HttpResponse response = client.execute(post);
-            if(response.getStatusLine().getStatusCode() % 100 == 2) {
+            if(response.getStatusLine().getStatusCode() / 100 == 2) {
                 getLog().info("Data cleaned successfully.");
             } else {
                 throw new MojoFailureException("Failed to clean data, the status code is [" +
