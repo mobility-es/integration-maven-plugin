@@ -1,6 +1,5 @@
 package com.appearnetworks.aiq;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -47,12 +46,12 @@ public class CleanServerMojo extends AbstractAIQMojo {
 
         getLog().info("Cleaning data for org [" + org + "] and solution [" + solution + "]");
 
-        final JsonNode authenticationResponse = authenticate(aiqUrl, username, password, org, solution);
+        final AuthenticationResponse authenticationResponse = authenticate(aiqUrl, username, password, org, solution);
 
         final HttpClient client = new DefaultHttpClient();
-        final HttpPost post = new HttpPost(extractLink(authenticationResponse, "clearsolution"));
+        final HttpPost post = new HttpPost(authenticationResponse.getLink("clearsolution"));
 
-        post.setHeader(HttpHeaders.AUTHORIZATION, "BEARER " + extractAccessToken(authenticationResponse));
+        post.setHeader(HttpHeaders.AUTHORIZATION, "BEARER " + authenticationResponse.getAccessToken());
         post.setEntity(new StringEntity("{}", ContentType.APPLICATION_JSON));
 
         try {

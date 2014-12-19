@@ -106,11 +106,10 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
      * @param password The password of the user to authenticate, must not be null.
      * @param orgName The name of the organization to which the given user belongs, must not be null.
      * @param solution The name of the solution, must not be null.
-     * @return access token string for given user, will not be null.
      * @throws MojoExecutionException in case when provided data is invalid.
      * @throws MojoFailureException in case when authentication fails.
      */
-    protected JsonNode authenticate(final String baseUrl,
+    protected AuthenticationResponse authenticate(final String baseUrl,
                                     final String username,
                                     final String password,
                                     final String orgName,
@@ -131,29 +130,19 @@ public abstract class AbstractAIQMojo extends AbstractMojo {
             throw new MojoExecutionException(e.getMessage());
         }
 
-        final String tokenUrl = requestAndGetValue(factory, request, "links", "token");
+        final String tokenUrlString = requestAndGetValue(factory, request, "links", "token");
 
-        try {
-            final URL url = new URL(tokenUrl);
-            request = new HttpPost(url.toURI());
-        } catch (URISyntaxException | MalformedURLException e) {
-            throw new MojoExecutionException(e.getMessage());
-        }
+        final URI tokenUrl = URI.create(tokenUrlString);
 
+        request = new HttpPost(tokenUrl);
         request.setHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_FORM_URLENCODED.getMimeType());
         ((HttpPost)request).setEntity(buildBody(username, password, solution));
 
         getLog().debug("Authenticating user [" + username + "] in org [" + orgName + "] and solution [" + solution + "]");
 
-        return makeHttpRequestForJson(factory, request);
-    }
+        final JsonNode jsonResponse = makeHttpRequestForJson(factory, request);
 
-    protected String extractAccessToken(JsonNode authenticationResponse) throws MojoExecutionException {
-        return extractValue(authenticationResponse, ACCESS_TOKEN_FIELD);
-    }
-
-    protected String extractLink(JsonNode authenticationResponse, String target) throws MojoExecutionException {
-        return extractValue(authenticationResponse, LINKS_FIELD, target);
+        return new AuthenticationResponse(extractValue(jsonResponse, ACCESS_TOKEN_FIELD), jsonResponse.path(LINKS_FIELD), tokenUrl);
     }
 
     /**

@@ -45,7 +45,7 @@ public abstract class AbstractReadLogsMojo extends AbstractAIQMojo {
         final String aiqUrl = properties.getProperty("aiq.url");
         final String solution = properties.getProperty("aiq.solution");
 
-        final String accessToken = extractAccessToken(authenticate(aiqUrl, username, password, org, solution));
+        final String accessToken = authenticate(aiqUrl, username, password, org, solution).getAccessToken();
 
         getLog().info("Tailing logs from the org [" + org + "]");
 
