@@ -1,9 +1,11 @@
 package com.appearnetworks.aiq;
 
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -39,17 +41,21 @@ public class CleanServerMojo extends AbstractAIQMojo {
         final String username = properties.getProperty("aiq.username");
         final String password = properties.getProperty("aiq.password");
         final String aiqUrl = properties.getProperty("aiq.url");
+        final String solution = properties.getProperty("aiq.solution");
 
-        getLog().info("Cleaning data for org [" + org + "]");
+        getLog().info("Cleaning data for org [" + org + "] and solution [" + solution + "]");
+
+        final AuthenticationResponse authenticationResponse = authenticate(aiqUrl, username, password, org, solution);
 
         final HttpClient client = new DefaultHttpClient();
-        final HttpPost post = new HttpPost(buildIntegrationURI(url, org, "server.clean"));
+        final HttpPost post = new HttpPost(authenticationResponse.getLink("clearsolution"));
 
-        addAuthenticationHeader(post, aiqUrl, username, password, org);
+        post.setHeader(HttpHeaders.AUTHORIZATION, "BEARER " + authenticationResponse.getAccessToken());
+        post.setEntity(new StringEntity("{}", ContentType.APPLICATION_JSON));
 
         try {
             final HttpResponse response = client.execute(post);
-            if(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+            if(response.getStatusLine().getStatusCode() / 100 == 2) {
                 getLog().info("Data cleaned successfully.");
             } else {
                 throw new MojoFailureException("Failed to clean data, the status code is [" +

@@ -1,6 +1,7 @@
 package com.appearnetworks.aiq;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -43,13 +44,15 @@ public abstract class AbstractFetchLogsMojo extends AbstractAIQMojo {
         final String username = properties.getProperty("aiq.username");
         final String password = properties.getProperty("aiq.password");
         final String aiqUrl = properties.getProperty("aiq.url");
+        final String solution = properties.getProperty("aiq.solution");
 
         getLog().info("Fetching logs from the org [" + org + "]");
 
         final HttpClient client = new DefaultHttpClient();
         final HttpGet get = new HttpGet(buildIntegrationURI(url, org, action));
 
-        addAuthenticationHeader(get, aiqUrl, username, password, org);
+        final String accessToken = authenticate(aiqUrl, username, password, org, solution).getAccessToken();
+        get.setHeader(HttpHeaders.AUTHORIZATION, "BEARER " + accessToken);
 
         try {
             HttpResponse response = client.execute(get);
